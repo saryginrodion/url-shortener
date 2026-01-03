@@ -1,0 +1,7 @@
+Dockerfile
+*.docker-compose.yaml
+readme.md
+
+run_integration_tests.sh
+run_all_tests.sh
+run_units_tests.sh

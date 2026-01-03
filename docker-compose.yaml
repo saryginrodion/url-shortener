@@ -1,0 +1,101 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+
+    command: ./server
+    restart: always
+
+    environment:
+      CONFIG_PATH: /configs/dev-compose.yaml
+
+    ports:
+      - "8001:8000"
+
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    volumes:
+      - ./configs/:/configs
+
+    networks:
+      - url-shortener-network
+
+  migrations:
+    build:
+      context: .
+      dockerfile: migrations/Dockerfile
+
+    command: ["/goose", "up"]
+    tty: true
+
+    environment:
+      GOOSE_DRIVER: postgres
+      GOOSE_DBSTRING: postgres://admin:admin@postgres:5432/admin
+      GOOSE_MIGRATION_DIR: .
+      GOOSE_TABLE: goose_migrations
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    networks:
+      - url-shortener-network
+
+  redis:
+    image: redis:latest
+    restart: unless-stopped
+    command: redis-server --save "60 1" --loglevel warning
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+    volumes:
+      - redis_data:/data
+
+    networks:
+      - url-shortener-network
+   
+  postgres:
+    image: postgres:18
+    command: ["postgres", "-c", "log_statement=all"]
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: admin
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/18/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d admin"]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+
+    networks:
+      - url-shortener-network
+
+volumes:
+  postgres_data:
+    name: urlshortener_postgres_data
+  redis_data:
+    name: urlshortener_redis_data
+
+networks:
+  url-shortener-network:
+    driver: bridge

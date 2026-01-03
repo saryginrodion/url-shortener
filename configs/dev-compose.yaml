@@ -1,0 +1,21 @@
+env: compose-dev
+
+postgres:
+  dsn: "postgres://admin:admin@postgres:5432/admin?sslmode=disable"
+
+http_server:
+  addr: "0.0.0.0:8000"
+  read_timeout: 10s
+  write_timeout: 10s
+  idle_timeout: 10s
+
+redis:
+  host: "redis:6379"
+  username: ""
+  password: ""
+  db: 0
+
+tokens:
+  access_ttl: 15m
+  refresh_ttl: 43200m
+  secret_key: "super-secret-key-change-me"
