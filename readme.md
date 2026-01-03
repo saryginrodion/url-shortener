@@ -1,7 +1,7 @@
 # url shortener
 
 - auth - email + password
-- opaque tokens
+- jwt tokens
 
 - MW checks token and returns sets context key "user"
 
